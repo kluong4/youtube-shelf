@@ -45,13 +45,12 @@
     margin-bottom:32px;
     flex-wrap:wrap;
   }
-  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand{display:flex;align-items:center;gap:12px;}
   .brand .mark{
-    display:inline-block;width:14px;height:14px;
-    background:var(--lacquer);
-    border-radius:3px;
-    transform:rotate(45deg);
-    position:relative;top:-2px;
+    width:40px;height:40px;
+    border-radius:9px;
+    object-fit:cover;
+    flex-shrink:0;
   }
   h1{
     font-size:28px;
@@ -222,7 +221,7 @@
 
   <header class="top">
     <div class="brand">
-      <span class="mark" aria-hidden="true"></span>
+      <img class="mark" src="icon-192.png" alt="" aria-hidden="true">
       <div>
         <h1>Playlist Shelf</h1>
         <div class="sub">Your YouTube playlists, sorted into folders</div>
