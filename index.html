@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playlist Shelf</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --paper:#F7F3ED;
+    --ink:#241F1C;
+    --ink-soft:#6B615A;
+    --lacquer:#A8342A;
+    --lacquer-deep:#7C231C;
+    --gold:#C79A3D;
+    --line:#E4DACD;
+    --card:#FFFFFF;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Segoe UI", Inter, -apple-system, sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:40px 24px 100px;}
+
+  header.top{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:20px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:18px;
+    margin-bottom:32px;
+    flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand .mark{
+    display:inline-block;width:14px;height:14px;
+    background:var(--lacquer);
+    border-radius:3px;
+    transform:rotate(45deg);
+    position:relative;top:-2px;
+  }
+  h1{
+    font-size:28px;
+    margin:0;
+    letter-spacing:-0.01em;
+    font-weight:700;
+  }
+  .sub{color:var(--ink-soft);font-size:14px;margin-top:4px;}
+
+  #signin-btn{
+    background:var(--lacquer);
+    color:#fff;
+    border:none;
+    padding:11px 20px;
+    border-radius:999px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  #signin-btn:hover{background:var(--lacquer-deep);}
+  #signin-btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
+
+  #status-panel{
+    display:flex;align-items:center;gap:10px;
+    font-size:13px;color:var(--ink-soft);
+  }
+  #signout-btn{
+    background:none;border:1px solid var(--line);color:var(--ink-soft);
+    border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer;
+  }
+  #signout-btn:hover{border-color:var(--ink-soft);color:var(--ink);}
+
+  #search{
+    width:100%;
+    padding:12px 16px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    font-size:14px;
+    margin-bottom:28px;
+    background:var(--card);
+    color:var(--ink);
+  }
+  #search:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
+
+  .setup-note{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-left:4px solid var(--gold);
+    border-radius:6px;
+    padding:16px 18px;
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin-bottom:28px;
+  }
+  .setup-note code{background:#EFE7DA;padding:1px 5px;border-radius:4px;font-size:12.5px;}
+
+  #empty-state{
+    text-align:center;
+    color:var(--ink-soft);
+    padding:80px 20px;
+    font-size:15px;
+  }
+
+  details.folder{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  details.folder[open]{border-color:#D8C9AE;}
+  summary.folder-head{
+    list-style:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:16px 20px;
+    font-weight:600;
+    font-size:16px;
+  }
+  summary.folder-head::-webkit-details-marker{display:none;}
+  summary.folder-head .chev{
+    color:var(--gold);
+    transition:transform .15s ease;
+    font-size:12px;
+    flex-shrink:0;
+  }
+  details[open] summary.folder-head .chev{transform:rotate(90deg);}
+  summary.folder-head .count{
+    font-weight:400;
+    color:var(--ink-soft);
+    font-size:13px;
+    margin-left:auto;
+    background:var(--paper);
+    padding:3px 10px;
+    border-radius:999px;
+  }
+
+  .folder-body{
+    padding:4px 14px 16px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:12px;
+  }
+
+  .plain-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:12px;
+    margin-bottom:14px;
+  }
+
+  .pl-card{
+    display:flex;
+    flex-direction:column;
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    background:var(--paper);
+    text-decoration:none;
+    color:var(--ink);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .pl-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(36,31,28,0.12);}
+  .pl-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  .pl-card img{
+    width:100%;
+    aspect-ratio:16/9;
+    object-fit:cover;
+    display:block;
+    background:#ddd;
+  }
+  .pl-card .pl-title{
+    padding:10px 12px 12px;
+    font-size:13.5px;
+    font-weight:600;
+    line-height:1.35;
+  }
+  .pl-card .pl-count{
+    padding:0 12px 10px;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:-8px;
+  }
+
+  h2.section-title{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--ink-soft);
+    margin:32px 0 12px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+
+  #loading{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <h1>Playlist Shelf</h1>
+        <div class="sub">Your YouTube playlists, sorted into folders</div>
+      </div>
+    </div>
+    <div id="auth-area">
+      <button id="signin-btn">Connect YouTube</button>
+      <div id="status-panel" style="display:none;">
+        <span id="status-text"></span>
+        <button id="signout-btn">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="setup-note" id="setup-note">
+    <strong>One-time setup:</strong> open this file and replace <code>YOUR_CLIENT_ID_HERE</code>
+    near the top of the <code>&lt;script&gt;</code> with your own Google OAuth Client ID.
+    See the setup instructions provided alongside this file for step-by-step help.
+  </div>
+
+  <input type="text" id="search" placeholder="Filter by folder or playlist name…" style="display:none;">
+
+  <div id="loading" style="display:none;">Loading your playlists…</div>
+  <div id="empty-state" style="display:none;">Connect your YouTube account to see your playlists here.</div>
+  <div id="content"></div>
+
+</div>
+
+<script>
+/* ============================================================
+   1. CONFIG — paste your OAuth Client ID between the quotes below
+   ============================================================ */
+const CLIENT_ID = "YOUR_CLIENT_ID_HERE";
+const SCOPE = "https://www.googleapis.com/auth/youtube.readonly";
+
+/* ============================================================
+   2. STATE
+   ============================================================ */
+let tokenClient = null;
+let accessToken = null;
+let allPlaylists = [];
+
+const els = {
+  signinBtn: document.getElementById('signin-btn'),
+  signoutBtn: document.getElementById('signout-btn'),
+  statusPanel: document.getElementById('status-panel'),
+  statusText: document.getElementById('status-text'),
+  authArea: document.getElementById('auth-area'),
+  setupNote: document.getElementById('setup-note'),
+  search: document.getElementById('search'),
+  loading: document.getElementById('loading'),
+  empty: document.getElementById('empty-state'),
+  content: document.getElementById('content'),
+};
+
+/* ============================================================
+   3. AUTH
+   ============================================================ */
+function initAuth() {
+  if (!CLIENT_ID || CLIENT_ID === "YOUR_CLIENT_ID_HERE") {
+    els.setupNote.style.display = 'block';
+    els.signinBtn.disabled = true;
+    els.signinBtn.style.opacity = 0.5;
+    els.signinBtn.style.cursor = 'not-allowed';
+    return;
+  }
+  els.setupNote.style.display = 'none';
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPE,
+    callback: (resp) => {
+      if (resp.error) {
+        alert('Sign-in failed: ' + resp.error);
+        return;
+      }
+      accessToken = resp.access_token;
+      onSignedIn();
+    },
+  });
+}
+
+function onSignedIn() {
+  els.signinBtn.style.display = 'none';
+  els.statusPanel.style.display = 'flex';
+  els.statusText.textContent = 'Connected';
+  fetchAllPlaylists();
+}
+
+function signOut() {
+  if (accessToken) {
+    google.accounts.oauth2.revoke(accessToken, () => {});
+  }
+  accessToken = null;
+  allPlaylists = [];
+  els.signinBtn.style.display = 'inline-block';
+  els.statusPanel.style.display = 'none';
+  els.search.style.display = 'none';
+  els.content.innerHTML = '';
+  els.empty.style.display = 'block';
+}
+
+els.signinBtn.addEventListener('click', () => tokenClient && tokenClient.requestAccessToken());
+els.signoutBtn.addEventListener('click', signOut);
+
+/* ============================================================
+   4. FETCH PLAYLISTS (paginated)
+   ============================================================ */
+async function fetchAllPlaylists() {
+  els.empty.style.display = 'none';
+  els.loading.style.display = 'block';
+  els.content.innerHTML = '';
+  allPlaylists = [];
+
+  let pageToken = '';
+  try {
+    do {
+      const url = new URL('https://www.googleapis.com/youtube/v3/playlists');
+      url.searchParams.set('part', 'snippet,contentDetails');
+      url.searchParams.set('mine', 'true');
+      url.searchParams.set('maxResults', '50');
+      if (pageToken) url.searchParams.set('pageToken', pageToken);
+
+      const res = await fetch(url, {
+        headers: { Authorization: 'Bearer ' + accessToken }
+      });
+      if (!res.ok) throw new Error('API error ' + res.status);
+      const data = await res.json();
+
+      (data.items || []).forEach(item => {
+        allPlaylists.push({
+          id: item.id,
+          title: item.snippet.title,
+          thumbnail: item.snippet.thumbnails?.medium?.url
+                  || item.snippet.thumbnails?.default?.url || '',
+          count: item.contentDetails?.itemCount ?? null,
+        });
+      });
+      pageToken = data.nextPageToken || '';
+    } while (pageToken);
+
+    els.loading.style.display = 'none';
+    els.search.style.display = 'block';
+    renderPlaylists(allPlaylists);
+  } catch (err) {
+    els.loading.style.display = 'none';
+    els.content.innerHTML = '<div id="empty-state" style="display:block;">Something went wrong loading playlists: ' + err.message + '</div>';
+  }
+}
+
+/* ============================================================
+   5. GROUPING LOGIC
+   ============================================================ */
+function stripDiacritics(str) {
+  return str.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+}
+function normalizeKey(str) {
+  return stripDiacritics(str).trim().toLowerCase().replace(/\s+/g, ' ');
+}
+function hasDiacritics(str) {
+  return stripDiacritics(str) !== str;
+}
+// splits on the FIRST " - " style dash; everything before it is the folder name
+function splitTitle(title) {
+  const m = title.match(/^(.*?)\s*-\s*(.+)$/);
+  if (m && m[1].trim().length > 0) {
+    return { prefix: m[1].trim(), hasFolder: true };
+  }
+  return { prefix: null, hasFolder: false };
+}
+
+function groupPlaylists(playlists) {
+  const folders = new Map(); // normalizedKey -> {display, items:[]}
+  const loose = [];
+
+  playlists.forEach(pl => {
+    const { prefix, hasFolder } = splitTitle(pl.title);
+    if (hasFolder) {
+      const key = normalizeKey(prefix);
+      if (!folders.has(key)) {
+        folders.set(key, { display: prefix, items: [] });
+      } else {
+        const existing = folders.get(key);
+        if (hasDiacritics(prefix) && !hasDiacritics(existing.display)) {
+          existing.display = prefix;
+        }
+      }
+      folders.get(key).items.push(pl);
+    } else {
+      loose.push(pl);
+    }
+  });
+
+  const collator = new Intl.Collator('vi', { sensitivity: 'base' });
+  const folderList = Array.from(folders.values());
+  folderList.forEach(f => f.items.sort((a, b) => collator.compare(a.title, b.title)));
+  folderList.sort((a, b) => collator.compare(a.display, b.display));
+  loose.sort((a, b) => collator.compare(a.title, b.title));
+
+  return { folderList, loose };
+}
+
+/* ============================================================
+   6. RENDER
+   ============================================================ */
+function playlistCardHTML(pl) {
+  const countLabel = pl.count === null ? '' : `<div class="pl-count">${pl.count} video${pl.count === 1 ? '' : 's'}</div>`;
+  const thumb = pl.thumbnail
+    ? `<img src="${pl.thumbnail}" alt="" loading="lazy">`
+    : `<div style="aspect-ratio:16/9;background:#e9e0d1;"></div>`;
+  return `
+    <a class="pl-card" href="https://www.youtube.com/playlist?list=${pl.id}" target="_blank" rel="noopener">
+      ${thumb}
+      <div class="pl-title">${escapeHTML(pl.title)}</div>
+      ${countLabel}
+    </a>`;
+}
+
+function escapeHTML(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function renderPlaylists(playlists) {
+  if (playlists.length === 0) {
+    els.content.innerHTML = '<div id="empty-state" style="display:block;">No playlists found.</div>';
+    return;
+  }
+  const { folderList, loose } = groupPlaylists(playlists);
+
+  let html = '';
+  folderList.forEach((f, i) => {
+    html += `
+      <details class="folder" ${i < 6 ? 'open' : ''}>
+        <summary class="folder-head">
+          <span class="chev">▶</span>
+          <span>${escapeHTML(f.display)}</span>
+          <span class="count">${f.items.length}</span>
+        </summary>
+        <div class="folder-body">
+          ${f.items.map(playlistCardHTML).join('')}
+        </div>
+      </details>`;
+  });
+
+  if (loose.length) {
+    html += `<h2 class="section-title">Ungrouped</h2>`;
+    html += `<div class="plain-list">${loose.map(playlistCardHTML).join('')}</div>`;
+  }
+
+  els.content.innerHTML = html;
+}
+
+/* ============================================================
+   7. SEARCH / FILTER
+   ============================================================ */
+els.search.addEventListener('input', () => {
+  const q = normalizeKey(els.search.value);
+  if (!q) { renderPlaylists(allPlaylists); return; }
+  const filtered = allPlaylists.filter(pl => normalizeKey(pl.title).includes(q));
+  renderPlaylists(filtered);
+});
+
+/* ============================================================
+   8. INIT
+   ============================================================ */
+window.addEventListener('load', () => {
+  // google script loads async; wait for it
+  const check = setInterval(() => {
+    if (window.google && google.accounts) {
+      clearInterval(check);
+      initAuth();
+    }
+  }, 100);
+});
+</script>
+</body>
+</html>
