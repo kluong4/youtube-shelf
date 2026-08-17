@@ -248,7 +248,7 @@
 /* ============================================================
    1. CONFIG — paste your OAuth Client ID between the quotes below
    ============================================================ */
-const CLIENT_ID = "925712863557-3gkmiiqsa9j93tfbpmvuv41lc3gig5mr.apps.googleusercontent.com";
+const CLIENT_ID = "YOUR_CLIENT_ID_HERE";
 const SCOPE = "https://www.googleapis.com/auth/youtube.readonly";
 
 /* ============================================================
@@ -341,8 +341,12 @@ async function fetchAllPlaylists() {
       const res = await fetch(url, {
         headers: { Authorization: 'Bearer ' + accessToken }
       });
-      if (!res.ok) throw new Error('API error ' + res.status);
       const data = await res.json();
+      if (!res.ok) {
+        const reason = data?.error?.errors?.[0]?.reason || data?.error?.status || '';
+        const message = data?.error?.message || res.statusText;
+        throw new Error(`${res.status}${reason ? ' (' + reason + ')' : ''}: ${message}`);
+      }
 
       (data.items || []).forEach(item => {
         allPlaylists.push({
