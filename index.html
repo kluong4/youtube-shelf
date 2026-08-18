@@ -498,11 +498,10 @@ function groupPlaylists(playlists) {
     }
   });
 
-  const collator = new Intl.Collator('vi', { sensitivity: 'base' });
   const folderList = Array.from(folders.values());
-  folderList.forEach(f => f.items.sort((a, b) => collator.compare(a.title, b.title)));
-  folderList.sort((a, b) => collator.compare(a.display, b.display));
-  loose.sort((a, b) => collator.compare(a.title, b.title));
+  folderList.forEach(f => f.items.sort((a, b) => normalizeKey(a.title).localeCompare(normalizeKey(b.title))));
+  folderList.sort((a, b) => normalizeKey(a.display).localeCompare(normalizeKey(b.display)));
+  loose.sort((a, b) => normalizeKey(a.title).localeCompare(normalizeKey(b.title)));
 
   return { folderList, loose };
 }
